@@ -61,7 +61,7 @@ col1 = st.sidebar
 col2, col3 = st.beta_columns((2,1))
 
 col1.header('Analysis Activate')
-analysis_active = col1.selectbox('Select Analysis activate ', ('Overview Data','Explore Data Analysis',\
+analysis_active = col1.selectbox('Select Analysis activate ', ('Overview Data',\
                                                                'Customer Segmentation', 'Product Segmentation'))
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
@@ -154,8 +154,8 @@ if analysis_active == 'Overview Data':
 
 elif analysis_active == 'Customer Segmentation':
 
-    col1.header('The information type')
-    segment_active = col1.selectbox('Select information type', ('Overview', 'Segmentation'))
+    # col1.header('The information type')
+    # segment_active = col1.selectbox('Select information type', ('Overview','Segmentation'))
 
     col1.header('The Columns')
     feature_cus_seg = col1.selectbox('Select Column', ( 'Frequency','Recency','Reordered_0', \
@@ -183,225 +183,226 @@ elif analysis_active == 'Customer Segmentation':
 
     st.markdown("***")
 
-    if segment_active == 'Overview':
+    # if segment_active == 'Overview':
+    #
+    #     idx = feature_selected.index(feature_cus_seg)
+    #     measure = feature[idx]
+    #
+    #     st.set_option('deprecation.showPyplotGlobalUse', False)
+    #     def Overview (feature_cus_seg, measure):
+    #
+    #         sns.set(style='darkgrid', font_scale=1.0, rc={"figure.figsize": [14, 6]})
+    #
+    #         f, ax = plt.subplots(1, 2, figsize=(20, 7))
+    #
+    #         # Get the fitted parameters used by the function
+    #         (mu, sigma) = norm.fit(cus_orderdetail_df[measure])
+    #
+    #         sns.set(style='darkgrid', font_scale=1.0)
+    #
+    #         # Kernel Density plot
+    #         sns.distplot(cus_orderdetail_df[measure], fit=norm, ax=ax[0])
+    #         ax[0].set_title(feature_cus_seg + ' Distribution ( mu = {:.2f} and sigma = {:.2f} )'.format(mu, sigma), loc='center')
+    #         ax[0].set_xlabel(feature_cus_seg)
+    #         ax[0].set_ylabel('Frequency')
+    #
+    #         # QQ plot
+    #         res = probplot(cus_orderdetail_df[measure], plot=ax[1])
+    #         ax[1].set_title(
+    #             measure + ' Probability Plot (skewness: {:.6f} and kurtosis: {:.6f} )'.format(cus_orderdetail_df[measure].skew(),
+    #                                                                                           cus_orderdetail_df[measure].kurt()),
+    #             loc='center')
+    #
+    #         st.pyplot()
+    #
+    #     ## Run function when been gotten the parameters out
+    #     Overview(feature_cus_seg, measure)
+    #
+    # else:
 
-        idx = feature_selected.index(feature_cus_seg)
-        measure = feature[idx]
+    ## Sidebar - Cluster selections
+    selected_cluster = col1.selectbox('Select information type', ('Clusters_2', 'Clusters_5','Clusters_8'))
 
-        st.set_option('deprecation.showPyplotGlobalUse', False)
-        def Overview (feature_cus_seg, measure):
+    label = list(cluster_centers[cluster_centers['Number_Cluster'] == selected_cluster]['Cluster'])
+    k  = len(label)
+    column_label = str(selected_cluster).lower()
+
+    list_target = []
+    for val in feature_selected:
+        if (feature_cus_seg not in list_target) and val != feature_cus_seg:
+            idx = feature_selected.index(val)
+            feature_column = feature[idx]
+            list_target.append(feature_column)
+
+    idx = feature_selected.index(feature_cus_seg)
+    feature_column = feature[idx]
+
+    ## Show information about cluster centroid
+    col2.markdown('** The Cluster Centroid information**')
+    col2.dataframe(cluster_centers[cluster_centers['Number_Cluster'] == selected_cluster].iloc[:, :6])
+
+    col2.markdown("***")
+
+    st.set_option('deprecation.showPyplotGlobalUse', False)
+    ## Pie chart show information of each Cluster
+    cmap = plt.get_cmap('Spectral')
+    colors = [cmap(i) for i in np.linspace(0, 1, 8)]
+
+
+    fig = make_subplots(rows=1, cols=1, specs=[[{'type': 'domain'}]])
+    fig.add_trace(go.Pie(labels=cus_orderdetail_df[column_label].index, values=cus_orderdetail_df[column_label].value_counts(), marker=dict(colors=colors\
+                                                                                       , line=dict(color='#FFF',\
+                                                                                                   width=2)),\
+                         domain={'x': [0.0, .4], 'y': [0.0, 1]}, name="Cluster"\
+                         , showlegend=False, textinfo='label+percent'), 1,1)
+
+    fig.update_layout(height=600,
+                      width=1000,
+                      autosize=False,
+                      paper_bgcolor='rgb(233,233,233)',
+                      annotations=[dict(text='Cluster', x=0.50, y=0.5, font_size=20, showarrow=False)],
+                      title_text='Distribute of each Cluster  in Dataset')
+
+    # fig = go.Figure(data= data, layout=layout)
+    fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
+    fig = go.Figure(fig)
+    col2.plotly_chart(fig, filename='transparent-background')
+##################################################################################################
+
+
+    fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
+    fig.add_trace(go.Pie(labels=cus_orderdetail_df[column_label].index,
+                         values=cus_orderdetail_df.groupby([column_label])[feature[1]].sum() \
+                         , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
+                         domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Recency" \
+                         , showlegend=True, textinfo='label+percent'), 1, 1)
+
+    fig.add_trace(go.Pie(labels=cus_orderdetail_df[column_label].index,
+                         values=cus_orderdetail_df.groupby([column_label])[feature[0]].sum()\
+                           , marker=dict(colors=colors , line=dict(color='#FFF',  width=2)), \
+                         domain={'x': [0.0, .4], 'y': [1.0, 1]} , name="Frequency"\
+                         , showlegend=True, textinfo='label+percent'),1,2)
+
+    fig.update_layout(height=600,
+                       width=1000,
+                       autosize=False,
+                       paper_bgcolor='rgb(233,233,233)',
+                       annotations=[dict(text='Recency', x=0.18, y=0.5, font_size=20, showarrow=False),
+                                    dict(text='Frequency', x=0.83, y=0.5, font_size=20, showarrow=False)],
+                       title_text='Distribute of Recency and Frequency by Cluster in Dataset')
+
+    # fig = go.Figure(data= data, layout=layout)
+    fig.update_traces( hole=.4, hoverinfo="label+percent+name+value")
+    fig = go.Figure(fig)
+    col2.plotly_chart(fig, filename='transparent-background')
+
+    ##############################################################################
+
+    fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
+    fig.add_trace(go.Pie(labels=cus_orderdetail_df[column_label].index,
+                         values=cus_orderdetail_df.groupby([column_label])[feature[2]].sum() \
+                         , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
+                         domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Reordered_0" \
+                         , showlegend=True, textinfo='label+percent'), 1, 1)
+
+    fig.add_trace(go.Pie(labels=cus_orderdetail_df[column_label].index,
+                         values=cus_orderdetail_df.groupby([column_label])[feature[3]].sum() \
+                         , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
+                         domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Reordered_1" \
+                         , showlegend=True, textinfo='label+percent'), 1, 2)
+
+    fig.update_layout(height=600,
+                      width=1000,
+                      autosize=False,
+                      paper_bgcolor='rgb(233,233,233)',
+                      annotations=[dict(text='Reordered_0', x=0.16, y=0.5, font_size=20, showarrow=False),
+                                   dict(text='Reordered_1', x=0.85, y=0.5, font_size=20, showarrow=False)],
+                      title_text='Distribute of Non-Reordered and Re-Ordered by Cluster in Dataset')
+
+    # fig = go.Figure(data= data, layout=layout)
+    fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
+    fig = go.Figure(fig)
+    col2.plotly_chart(fig, filename='transparent-background')
+
+    if col1.checkbox("Detail Cluster"):
+        def cluster_visual(column_label,k, feature_column, target):
 
             sns.set(style='darkgrid', font_scale=1.0, rc={"figure.figsize": [14, 6]})
 
-            f, ax = plt.subplots(1, 2, figsize=(20, 7))
+            for i in range(k):
+                plt.scatter(cus_orderdetail_df[cus_orderdetail_df[column_label] == i][feature_column], \
+                            cus_orderdetail_df[cus_orderdetail_df[column_label] == i][target], s=20,
+                            label='Cluster ' + str(i + 1))
 
-            # Get the fitted parameters used by the function
-            (mu, sigma) = norm.fit(cus_orderdetail_df[measure])
-
-            sns.set(style='darkgrid', font_scale=1.0)
-
-            # Kernel Density plot
-            sns.distplot(cus_orderdetail_df[measure], fit=norm, ax=ax[0])
-            ax[0].set_title(feature_cus_seg + ' Distribution ( mu = {:.2f} and sigma = {:.2f} )'.format(mu, sigma), loc='center')
-            ax[0].set_xlabel(feature_cus_seg)
-            ax[0].set_ylabel('Frequency')
-
-            # QQ plot
-            res = probplot(cus_orderdetail_df[measure], plot=ax[1])
-            ax[1].set_title(
-                measure + ' Probability Plot (skewness: {:.6f} and kurtosis: {:.6f} )'.format(cus_orderdetail_df[measure].skew(),
-                                                                                              cus_orderdetail_df[measure].kurt()),
-                loc='center')
-
-            st.pyplot()
-
-        ## Run function when been gotten the parameters out
-        Overview(feature_cus_seg, measure)
-
-    else:
-
-        ## Sidebar - Cluster selections
-        selected_cluster = col1.selectbox('Select information type', ('Clusters_2', 'Clusters_5','Clusters_8'))
-
-        label = list(cluster_centers[cluster_centers['Number_Cluster'] == selected_cluster]['Cluster'])
-        k  = len(label)
-        column_label = str(selected_cluster).lower()
-
-        list_target = []
-        for val in feature_selected:
-            if (feature_cus_seg not in list_target) and val != feature_cus_seg:
-                idx = feature_selected.index(val)
-                feature_column = feature[idx]
-                list_target.append(feature_column)
-
-        idx = feature_selected.index(feature_cus_seg)
-        feature_column = feature[idx]
-
-        st.set_option('deprecation.showPyplotGlobalUse', False)
-        ## Pie chart show information of each Cluster
-        cmap = plt.get_cmap('Spectral')
-        colors = [cmap(i) for i in np.linspace(0, 1, 8)]
+                plt.scatter(cluster_centers[(cluster_centers['Number_Cluster'] == selected_cluster) & (
+                        cluster_centers['Cluster'] == i)][feature_column], \
+                            cluster_centers[(cluster_centers['Number_Cluster'] == selected_cluster) & (
+                                    cluster_centers['Cluster'] == i)][target], s=300 \
+                            , c='black')
+            plt.xlabel(feature_column)
+            plt.ylabel(target)
+            plt.title('Cluster of ' + feature_cus_seg + ' with ' + target)
+            plt.legend()
+            col2.pyplot()
 
 
-        fig = make_subplots(rows=1, cols=1, specs=[[{'type': 'domain'}]])
-        fig.add_trace(go.Pie(labels=cus_orderdetail_df[column_label].index, values=cus_orderdetail_df[column_label].value_counts(), marker=dict(colors=colors\
-                                                                                           , line=dict(color='#FFF',\
-                                                                                                       width=2)),\
-                             domain={'x': [0.0, .4], 'y': [0.0, 1]}, name="Cluster"\
-                             , showlegend=False, textinfo='label+percent'), 1,1)
-
-        fig.update_layout(height=600,
-                          width=1000,
-                          autosize=False,
-                          paper_bgcolor='rgb(233,233,233)',
-                          annotations=[dict(text='Cluster', x=0.50, y=0.5, font_size=20, showarrow=False)],
-                          title_text='Distribute of each Cluster  in Dataset')
-
-        # fig = go.Figure(data= data, layout=layout)
-        fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
-        fig = go.Figure(fig)
-        col2.plotly_chart(fig, filename='transparent-background')
-    ##################################################################################################
+        ## Visualization between the features each other
+        for idx,val in enumerate(list_target):
+            cluster_visual(column_label, k, feature_column, val)
 
 
-        fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
-        fig.add_trace(go.Pie(labels=cus_orderdetail_df[column_label].index,
-                             values=cus_orderdetail_df.groupby([column_label])[feature[1]].sum() \
-                             , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
-                             domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Recency" \
-                             , showlegend=True, textinfo='label+percent'), 1, 1)
-
-        fig.add_trace(go.Pie(labels=cus_orderdetail_df[column_label].index,
-                             values=cus_orderdetail_df.groupby([column_label])[feature[0]].sum()\
-                               , marker=dict(colors=colors , line=dict(color='#FFF',  width=2)), \
-                             domain={'x': [0.0, .4], 'y': [1.0, 1]} , name="Frequency"\
-                             , showlegend=True, textinfo='label+percent'),1,2)
-
-        fig.update_layout(height=600,
-                           width=1000,
-                           autosize=False,
-                           paper_bgcolor='rgb(233,233,233)',
-                           annotations=[dict(text='Recency', x=0.18, y=0.5, font_size=20, showarrow=False),
-                                        dict(text='Frequency', x=0.83, y=0.5, font_size=20, showarrow=False)],
-                           title_text='Distribute of Recency and Frequency by Cluster in Dataset')
-
-        # fig = go.Figure(data= data, layout=layout)
-        fig.update_traces( hole=.4, hoverinfo="label+percent+name+value")
-        fig = go.Figure(fig)
-        col2.plotly_chart(fig, filename='transparent-background')
-
-        ##############################################################################
-
-        fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
-        fig.add_trace(go.Pie(labels=cus_orderdetail_df[column_label].index,
-                             values=cus_orderdetail_df.groupby([column_label])[feature[2]].sum() \
-                             , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
-                             domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Reordered_0" \
-                             , showlegend=True, textinfo='label+percent'), 1, 1)
-
-        fig.add_trace(go.Pie(labels=cus_orderdetail_df[column_label].index,
-                             values=cus_orderdetail_df.groupby([column_label])[feature[3]].sum() \
-                             , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
-                             domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Reordered_1" \
-                             , showlegend=True, textinfo='label+percent'), 1, 2)
-
-        fig.update_layout(height=600,
-                          width=1000,
-                          autosize=False,
-                          paper_bgcolor='rgb(233,233,233)',
-                          annotations=[dict(text='Reordered_0', x=0.16, y=0.5, font_size=20, showarrow=False),
-                                       dict(text='Reordered_1', x=0.85, y=0.5, font_size=20, showarrow=False)],
-                          title_text='Distribute of Non-Reordered and Re-Ordered by Cluster in Dataset')
-
-        # fig = go.Figure(data= data, layout=layout)
-        fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
-        fig = go.Figure(fig)
-        col2.plotly_chart(fig, filename='transparent-background')
-
-        if col1.checkbox("Detail Cluster"):
-            ## Show information about cluster centroid
-            col2.markdown('** The Cluster Centroid information**')
-            col2.dataframe(cluster_centers[cluster_centers['Number_Cluster'] == selected_cluster].iloc[:, :6])
-
-            col2.markdown("***")
-            def cluster_visual(column_label,k, feature_column, target):
-
-                sns.set(style='darkgrid', font_scale=1.0, rc={"figure.figsize": [14, 6]})
-
-                for i in range(k):
-                    plt.scatter(cus_orderdetail_df[cus_orderdetail_df[column_label] == i][feature_column], \
-                                cus_orderdetail_df[cus_orderdetail_df[column_label] == i][target], s=20,
-                                label='Cluster ' + str(i + 1))
-
-                    plt.scatter(cluster_centers[(cluster_centers['Number_Cluster'] == selected_cluster) & (
-                            cluster_centers['Cluster'] == i)][feature_column], \
-                                cluster_centers[(cluster_centers['Number_Cluster'] == selected_cluster) & (
-                                        cluster_centers['Cluster'] == i)][target], s=300 \
-                                , c='black')
-                plt.xlabel(feature_column)
-                plt.ylabel(target)
-                plt.title('Cluster of ' + feature_cus_seg + ' with ' + target)
-                plt.legend()
-                col2.pyplot()
+        ## Box plot to show the different of the features in each cluster
+        n_clusters = k
 
 
-            ## Visualization between the features each other
-            for idx,val in enumerate(list_target):
-                cluster_visual(column_label, k, feature_column, val)
+        x_data = ['Cluster 0', 'Cluster 1', 'Cluster 2', 'Cluster 3', 'Cluster 4', 'Cluster 5', 'Cluster 6', 'Cluster 7']
+        colors = ['rgba(93, 164, 214, 0.5)', 'rgba(255, 144, 14, 0.5)', 'rgba(44, 160, 101, 0.5)', 'rgba(255, 65, 54, 0.5)',
+                  'rgba(22, 80, 57, 0.5)', 'rgba(127, 65, 14, 0.5)', 'rgba(207, 114, 255, 0.5)', 'rgba(127, 96, 0, 0.5)']
 
+        #cutoff_quantile = 95
+        cl = 'clusters_' + str(n_clusters)
+        for fild in range(0, len(feature)):
+            field_to_plot = feature[fild]
+            y_data = list()
+            ymax = 0
+            for i in np.arange(0, n_clusters):
+                y0 = cus_orderdetail_df[cus_orderdetail_df[cl] == i][field_to_plot].values
+                # y0 = y0[y0 < np.percentile(y0, cutoff_quantile)]
+                # if ymax < max(y0): ymax = max(y0)
+                y_data.insert(i, y0)
 
-            ## Box plot to show the different of the features in each cluster
-            n_clusters = k
+            traces = []
 
+            for xd, yd, cls in zip(x_data[:n_clusters], y_data, colors[:n_clusters]):
+                traces.append(go.Box(y=yd, name=xd, boxpoints=False, jitter=0.5, whiskerwidth=0.2, fillcolor=cls,
+                                     marker=dict(size=1, ),
+                                     line=dict(width=1),
+                                     ))
 
-            x_data = ['Cluster 0', 'Cluster 1', 'Cluster 2', 'Cluster 3', 'Cluster 4', 'Cluster 5', 'Cluster 6', 'Cluster 7']
-            colors = ['rgba(93, 164, 214, 0.5)', 'rgba(255, 144, 14, 0.5)', 'rgba(44, 160, 101, 0.5)', 'rgba(255, 65, 54, 0.5)',
-                      'rgba(22, 80, 57, 0.5)', 'rgba(127, 65, 14, 0.5)', 'rgba(207, 114, 255, 0.5)', 'rgba(127, 96, 0, 0.5)']
+            layout = go.Layout(
+                yaxis=dict(autorange=True, showgrid=True, zeroline=True,
+                           dtick=int(ymax / 10),
+                           gridcolor='white', gridwidth=0.1, zerolinecolor='rgb(255, 255, 255)', zerolinewidth=2, ),
+                margin=dict(l=40, r=30, b=50, t=50, ),
+                paper_bgcolor='white',
+                plot_bgcolor='rgba(93, 164, 214, 0.5)',
+                showlegend=False
+            )
 
-            #cutoff_quantile = 95
-            cl = 'clusters_' + str(n_clusters)
-            for fild in range(0, len(feature)):
-                field_to_plot = feature[fild]
-                y_data = list()
-                ymax = 0
-                for i in np.arange(0, n_clusters):
-                    y0 = cus_orderdetail_df[cus_orderdetail_df[cl] == i][field_to_plot].values
-                    # y0 = y0[y0 < np.percentile(y0, cutoff_quantile)]
-                    # if ymax < max(y0): ymax = max(y0)
-                    y_data.insert(i, y0)
-
-                traces = []
-
-                for xd, yd, cls in zip(x_data[:n_clusters], y_data, colors[:n_clusters]):
-                    traces.append(go.Box(y=yd, name=xd, boxpoints=False, jitter=0.5, whiskerwidth=0.2, fillcolor=cls,
-                                         marker=dict(size=1, ),
-                                         line=dict(width=1),
-                                         ))
-
-                layout = go.Layout(
-                    yaxis=dict(autorange=True, showgrid=True, zeroline=True,
-                               dtick=int(ymax / 10),
-                               gridcolor='black', gridwidth=0.1, zerolinecolor='rgb(255, 255, 255)', zerolinewidth=2, ),
-                    margin=dict(l=40, r=30, b=50, t=50, ),
-                    paper_bgcolor='white',
-                    plot_bgcolor='white',
-                    showlegend=False
-                )
-
-                fig = go.Figure(data=traces, layout=layout)
-                fig.update_layout(
-                    title= 'Difference in ' + field_to_plot + ' with ' + str(n_clusters) + ' Clusters.'
-                )
-                col3.plotly_chart(fig)
+            fig = go.Figure(data=traces, layout=layout)
+            fig.update_layout(
+                title= 'Difference in ' + field_to_plot + ' with ' + str(n_clusters) + ' Clusters.'
+            )
+            col3.plotly_chart(fig)
 
 elif analysis_active == 'Product Segmentation':
 
-    col1.header('The information type')
-    segment_active_product = col1.selectbox('Select information type', ('Overview', 'Segmentation'))
+    # col1.header('The information type')
+    # segment_active_product = col1.selectbox('Select information type', ('Overview','Segmentation'))
 
     col1.header('The Columns')
     feature_product_seg = col1.selectbox('Select Column', ('Frequency', 'Reordered_0', 'Reordered_1', \
-                                                       'Ordered_first', 'Ordered_last','Department','Aisle'))
+                                                       'Ordered_first', 'Ordered_last'))
     col2.write("""
         ### Product Segmentation
          - Segment Product based on frequency information, recency -- first and last, the total line by the re-ordered status.
@@ -420,250 +421,249 @@ elif analysis_active == 'Product Segmentation':
     col2.dataframe(products_reordered.iloc[:5, [0,1,2,3,4,5,10,11]])
     col2.markdown("***")
 
-    if segment_active_product == 'Overview':
-        feature_product = str(feature_product_seg).lower()
-        if (feature_product_seg == 'Department') | (feature_product_seg == 'Aisle'):
+    # if segment_active_product == 'Overview':
+    #     feature_product = str(feature_product_seg).lower()
+    #     if (feature_product_seg == 'Department') | (feature_product_seg == 'Aisle'):
+    #
+    #         def make_count(df, col):
+    #             fig, ax = plt.subplots(1, 1, figsize=(14, 7))
+    #             g = sns.countplot(x=col, order = df[col].value_counts().head(21).index,data=df)
+    #             g.set_ylabel("Number")
+    #             g.set_title('Distributed of ' + col)
+    #             for label in ax.get_xticklabels():
+    #                 label.set_rotation(90)
+    #             plot_dict = {}
+    #             val_counts = dict(df[col].value_counts().head(21).sort_index())
+    #             for k, v in val_counts.items():
+    #                 if k in val_counts:
+    #                     plot_dict[val_counts[k]] = val_counts[k]
+    #                 else:
+    #                     plot_dict[0] = 0
+    #             for x in g.patches:
+    #                 height = x.get_height()
+    #                 g.text(x.get_x() + x.get_width() / 2.0, height, plot_dict[height] \
+    #                        , ha="center", va="bottom", fontsize=8, weight="semibold", size="small")
+    #             col2.pyplot()
+    #         make_count(products_reordered, feature_product)
+    #     else:
+    #
+    #         def Overview(feature_cus_seg, measure):
+    #
+    #             sns.set(style='darkgrid', font_scale=1.0, rc={"figure.figsize": [14, 6]})
+    #
+    #             f, ax = plt.subplots(1, 2, figsize=(20, 7))
+    #
+    #             # Get the fitted parameters used by the function
+    #             (mu, sigma) = norm.fit(products_reordered[measure])
+    #
+    #             sns.set(style='darkgrid', font_scale=1.0)
+    #
+    #             # Kernel Density plot
+    #             sns.distplot(products_reordered[measure], fit=norm, ax=ax[0])
+    #             ax[0].set_title(feature_cus_seg + ' Distribution ( mu = {:.2f} and sigma = {:.2f} )'.format(mu, sigma),
+    #                             loc='center')
+    #             ax[0].set_xlabel(feature_cus_seg)
+    #             ax[0].set_ylabel('Frequency')
+    #
+    #             # QQ plot
+    #             res = probplot(products_reordered[measure], plot=ax[1])
+    #             ax[1].set_title(
+    #                 measure + ' Probability Plot (skewness: {:.6f} and kurtosis: {:.6f} )'.format(
+    #                     products_reordered[measure].skew(),
+    #                     products_reordered[measure].kurt()),
+    #                 loc='center')
+    #
+    #             st.pyplot()
+    #
+    #         Overview(feature_product_seg, feature_product)
+    # else:
 
-            def make_count(df, col):
-                fig, ax = plt.subplots(1, 1, figsize=(14, 7))
-                g = sns.countplot(x=col, order = df[col].value_counts().head(21).index,data=df)
-                g.set_ylabel("Number")
-                g.set_title('Distributed of ' + col)
-                for label in ax.get_xticklabels():
-                    label.set_rotation(90)
-                plot_dict = {}
-                val_counts = dict(df[col].value_counts().head(21).sort_index())
-                for k, v in val_counts.items():
-                    if k in val_counts:
-                        plot_dict[val_counts[k]] = val_counts[k]
-                    else:
-                        plot_dict[0] = 0
-                for x in g.patches:
-                    height = x.get_height()
-                    g.text(x.get_x() + x.get_width() / 2.0, height, plot_dict[height] \
-                           , ha="center", va="bottom", fontsize=8, weight="semibold", size="small")
-                col2.pyplot()
-            make_count(products_reordered, feature_product)
-        else:
+    product_column = ['frequency', 'reordered_0', 'reordered_1', 'ordered_first', 'ordered_last']
+    feature_product = str(feature_product_seg).lower()
 
-            def Overview(feature_cus_seg, measure):
-
-                sns.set(style='darkgrid', font_scale=1.0, rc={"figure.figsize": [14, 6]})
-
-                f, ax = plt.subplots(1, 2, figsize=(20, 7))
-
-                # Get the fitted parameters used by the function
-                (mu, sigma) = norm.fit(products_reordered[measure])
-
-                sns.set(style='darkgrid', font_scale=1.0)
-
-                # Kernel Density plot
-                sns.distplot(products_reordered[measure], fit=norm, ax=ax[0])
-                ax[0].set_title(feature_cus_seg + ' Distribution ( mu = {:.2f} and sigma = {:.2f} )'.format(mu, sigma),
-                                loc='center')
-                ax[0].set_xlabel(feature_cus_seg)
-                ax[0].set_ylabel('Frequency')
-
-                # QQ plot
-                res = probplot(products_reordered[measure], plot=ax[1])
-                ax[1].set_title(
-                    measure + ' Probability Plot (skewness: {:.6f} and kurtosis: {:.6f} )'.format(
-                        products_reordered[measure].skew(),
-                        products_reordered[measure].kurt()),
-                    loc='center')
-
-                st.pyplot()
-
-            Overview(feature_product_seg, feature_product)
-    else:
-
-        product_column = ['frequency', 'reordered_0', 'reordered_1', 'ordered_first', 'ordered_last']
-        feature_product = str(feature_product_seg).lower()
-
-        ## Sidebar - Cluster selections
-        selected_cluster = col1.selectbox('Select information type', ('Clusters_5','Clusters_8'))
-
-
-        label = list(product_cluster_center[product_cluster_center['Number_Cluster'] == selected_cluster]['Cluster'])
-        k  = len(label)
-        column_label = str(selected_cluster).lower()
+    ## Sidebar - Cluster selections
+    selected_cluster = col1.selectbox('Select information type', ('Clusters_5','Clusters_8'))
 
 
-        list_target = []
-        for val in product_column:
-            if (product_column not in list_target) and val != feature_product:
-                list_target.append(val)
+    label = list(product_cluster_center[product_cluster_center['Number_Cluster'] == selected_cluster]['Cluster'])
+    k  = len(label)
+    column_label = str(selected_cluster).lower()
 
 
+    list_target = []
+    for val in product_column:
+        if (product_column not in list_target) and val != feature_product:
+            list_target.append(val)
 
-        st.set_option('deprecation.showPyplotGlobalUse', False)
-        ## Pie chart show information of each Cluster
-        cmap = plt.get_cmap('Spectral')
-        colors = [cmap(i) for i in np.linspace(0, 1, 8)]
+    ## Show information about cluster centroid
+    col2.markdown('** The Cluster Centroid information**')
+    col2.dataframe(product_cluster_center[product_cluster_center['Number_Cluster'] == selected_cluster].iloc[:, :6])
+    col2.markdown("***")
 
-        fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
-        fig.add_trace(go.Pie(labels=products_reordered[column_label].index, values=products_reordered[column_label].value_counts(), marker=dict(colors=colors\
-                                                                                           , line=dict(color='#FFF',\
-                                                                                                       width=2)),\
-                             domain={'x': [0.0, .4], 'y': [0.0, 1]}, name="Cluster"\
-                             , showlegend=False, textinfo='label+percent'), 1,1)
-        fig.add_trace(go.Pie(labels=products_reordered[column_label].index,
-                             values=products_reordered.groupby([column_label])[product_column[0]].sum() \
-                             , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
-                             domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Frequency" \
-                             , showlegend=True, textinfo='label+percent'), 1, 2)
+    st.set_option('deprecation.showPyplotGlobalUse', False)
+    ## Pie chart show information of each Cluster
+    cmap = plt.get_cmap('Spectral')
+    colors = [cmap(i) for i in np.linspace(0, 1, 8)]
 
-        fig.update_layout(height=600,
-                          width=1000,
-                          autosize=False,
-                          paper_bgcolor='rgb(233,233,233)',
-                          annotations=[dict(text='Cluster', x=0.18, y=0.5, font_size=20, showarrow=False),
-                                       dict(text='Frequency', x=0.83, y=0.5, font_size=20, showarrow=False)],
-                          title_text='Distribute of Cluster and Frequency in Dataset')
+    fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
+    fig.add_trace(go.Pie(labels=products_reordered[column_label].index, values=products_reordered[column_label].value_counts(), marker=dict(colors=colors\
+                                                                                       , line=dict(color='#FFF',\
+                                                                                                   width=2)),\
+                         domain={'x': [0.0, .4], 'y': [0.0, 1]}, name="Cluster"\
+                         , showlegend=False, textinfo='label+percent'), 1,1)
+    fig.add_trace(go.Pie(labels=products_reordered[column_label].index,
+                         values=products_reordered.groupby([column_label])[product_column[0]].sum() \
+                         , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
+                         domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Frequency" \
+                         , showlegend=True, textinfo='label+percent'), 1, 2)
 
-        # fig = go.Figure(data= data, layout=layout)
-        fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
-        fig = go.Figure(fig)
-        col2.plotly_chart(fig, filename='transparent-background')
-    ##################################################################################################
+    fig.update_layout(height=600,
+                      width=1000,
+                      autosize=False,
+                      paper_bgcolor='rgb(233,233,233)',
+                      annotations=[dict(text='Cluster', x=0.18, y=0.5, font_size=20, showarrow=False),
+                                   dict(text='Frequency', x=0.83, y=0.5, font_size=20, showarrow=False)],
+                      title_text='Distribute of Cluster and Frequency in Dataset')
 
-
-        fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
-        fig.add_trace(go.Pie(labels=products_reordered[column_label].index,
-                             values=products_reordered.groupby([column_label])[product_column[3]].sum() \
-                             , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
-                             domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Ordered_first" \
-                             , showlegend=True, textinfo='label+percent'), 1, 1)
-
-        fig.add_trace(go.Pie(labels=products_reordered[column_label].index,
-                             values=products_reordered.groupby([column_label])[product_column[4]].sum()\
-                               , marker=dict(colors=colors , line=dict(color='#FFF',  width=2)), \
-                             domain={'x': [0.0, .4], 'y': [1.0, 1]} , name="Ordered_last"\
-                             , showlegend=True, textinfo='label+percent'),1,2)
-
-        fig.update_layout(height=600,
-                           width=1000,
-                           autosize=False,
-                           paper_bgcolor='rgb(233,233,233)',
-                           annotations=[dict(text='Ordered_first', x=0.15, y=0.5, font_size=20, showarrow=False),
-                                        dict(text='Ordered_last', x=0.85, y=0.5, font_size=20, showarrow=False)],
-                           title_text='Distribute of Ordered first and Ordered last by Cluster in Dataset')
-
-        # fig = go.Figure(data= data, layout=layout)
-        fig.update_traces( hole=.4, hoverinfo="label+percent+name+value")
-        fig = go.Figure(fig)
-        col2.plotly_chart(fig, filename='transparent-background')
-
-        ##############################################################################
-
-        fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
-        fig.add_trace(go.Pie(labels=products_reordered[column_label].index,
-                             values=products_reordered.groupby([column_label])[product_column[1]].sum() \
-                             , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
-                             domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Reordered_0" \
-                             , showlegend=True, textinfo='label+percent'), 1, 1)
-
-        fig.add_trace(go.Pie(labels=products_reordered[column_label].index,
-                             values=products_reordered.groupby([column_label])[product_column[2]].sum() \
-                             , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
-                             domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Reordered_1" \
-                             , showlegend=True, textinfo='label+percent'), 1, 2)
-
-        fig.update_layout(height=600,
-                          width=1000,
-                          autosize=False,
-                          paper_bgcolor='rgb(233,233,233)',
-                          annotations=[dict(text='Reordered_0', x=0.16, y=0.5, font_size=20, showarrow=False),
-                                       dict(text='Reordered_1', x=0.85, y=0.5, font_size=20, showarrow=False)],
-                          title_text='Distribute of Non-Reordered and Re-Ordered by Cluster in Dataset')
-
-        # fig = go.Figure(data= data, layout=layout)
-        fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
-        fig = go.Figure(fig)
-        col2.plotly_chart(fig, filename='transparent-background')
+    # fig = go.Figure(data= data, layout=layout)
+    fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
+    fig = go.Figure(fig)
+    col2.plotly_chart(fig, filename='transparent-background')
+##################################################################################################
 
 
-        if col1.checkbox("Detail Cluster"):
-            ## Show information about cluster centroid
-            col3.markdown('** The Cluster Centroid information**')
-            col3.dataframe(product_cluster_center[product_cluster_center['Number_Cluster'] == selected_cluster].iloc[:, :6])
+    fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
+    fig.add_trace(go.Pie(labels=products_reordered[column_label].index,
+                         values=products_reordered.groupby([column_label])[product_column[3]].sum() \
+                         , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
+                         domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Ordered_first" \
+                         , showlegend=True, textinfo='label+percent'), 1, 1)
 
-            col3.markdown("***")
-            def cluster_visual(column_label,k, feature_column, target):
+    fig.add_trace(go.Pie(labels=products_reordered[column_label].index,
+                         values=products_reordered.groupby([column_label])[product_column[4]].sum()\
+                           , marker=dict(colors=colors , line=dict(color='#FFF',  width=2)), \
+                         domain={'x': [0.0, .4], 'y': [1.0, 1]} , name="Ordered_last"\
+                         , showlegend=True, textinfo='label+percent'),1,2)
 
-                sns.set(style='darkgrid', font_scale=1.0, rc={"figure.figsize": [14, 6]})
+    fig.update_layout(height=600,
+                       width=1000,
+                       autosize=False,
+                       paper_bgcolor='rgb(233,233,233)',
+                       annotations=[dict(text='Ordered_first', x=0.15, y=0.5, font_size=20, showarrow=False),
+                                    dict(text='Ordered_last', x=0.85, y=0.5, font_size=20, showarrow=False)],
+                       title_text='Distribute of Ordered first and Ordered last by Cluster in Dataset')
 
-                for i in range(k):
-                    cutoff_data_feature = products_reordered[products_reordered[column_label] == i][feature_column].quantile(0.70)
-                    cutoff_data_target = products_reordered[products_reordered[column_label] == i][target].quantile(0.70)
-                    if cutoff_data_feature > cutoff_data_target :
-                        plt.scatter(products_reordered[(products_reordered[column_label] == i) & (products_reordered[feature_column] < cutoff_data_feature)][feature_column], \
-                                    products_reordered[(products_reordered[column_label] == i) & (products_reordered[feature_column] < cutoff_data_feature)][target], s=20,label='Cluster ' + str(i + 1))
-                    else:
-                        plt.scatter(products_reordered[(products_reordered[column_label] == i) & (
-                                    products_reordered[target] < cutoff_data_target)][feature_column], \
-                                    products_reordered[(products_reordered[column_label] == i) & (
-                                                products_reordered[target] < cutoff_data_target)][target], s=20,label='Cluster ' + str(i + 1))
+    # fig = go.Figure(data= data, layout=layout)
+    fig.update_traces( hole=.4, hoverinfo="label+percent+name+value")
+    fig = go.Figure(fig)
+    col2.plotly_chart(fig, filename='transparent-background')
 
-                    plt.scatter(product_cluster_center[(product_cluster_center['Number_Cluster'] == selected_cluster) & (
-                            product_cluster_center['Cluster'] == i)][feature_column], \
-                                product_cluster_center[(product_cluster_center['Number_Cluster'] == selected_cluster) & (
-                                        product_cluster_center['Cluster'] == i)][target], s=300 \
-                                , c='black')
-                plt.xlabel(feature_column)
-                plt.ylabel(target)
-                plt.title('Cluster of ' + feature_product_seg + ' with ' + target)
-                plt.legend()
-                col2.pyplot()
+    ##############################################################################
+
+    fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
+    fig.add_trace(go.Pie(labels=products_reordered[column_label].index,
+                         values=products_reordered.groupby([column_label])[product_column[1]].sum() \
+                         , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
+                         domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Reordered_0" \
+                         , showlegend=True, textinfo='label+percent'), 1, 1)
+
+    fig.add_trace(go.Pie(labels=products_reordered[column_label].index,
+                         values=products_reordered.groupby([column_label])[product_column[2]].sum() \
+                         , marker=dict(colors=colors, line=dict(color='#FFF', width=2)), \
+                         domain={'x': [0.0, .4], 'y': [1.0, 1]}, name="Reordered_1" \
+                         , showlegend=True, textinfo='label+percent'), 1, 2)
+
+    fig.update_layout(height=600,
+                      width=1000,
+                      autosize=False,
+                      paper_bgcolor='rgb(233,233,233)',
+                      annotations=[dict(text='Reordered_0', x=0.16, y=0.5, font_size=20, showarrow=False),
+                                   dict(text='Reordered_1', x=0.85, y=0.5, font_size=20, showarrow=False)],
+                      title_text='Distribute of Non-Reordered and Re-Ordered by Cluster in Dataset')
+
+    # fig = go.Figure(data= data, layout=layout)
+    fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
+    fig = go.Figure(fig)
+    col2.plotly_chart(fig, filename='transparent-background')
 
 
-            ## Visualization between the features each other
-            for idx,val in enumerate(list_target):
-                cluster_visual(column_label, k, feature_product, val)
+    if col1.checkbox("Detail Cluster"):
 
-            ## Box plot to show the different of the features in each cluster
-            n_clusters = k
+        def cluster_visual(column_label,k, feature_column, target):
+
+            sns.set(style='darkgrid', font_scale=1.0, rc={"figure.figsize": [14, 6]})
+
+            for i in range(k):
+                cutoff_data_feature = products_reordered[products_reordered[column_label] == i][feature_column].quantile(0.70)
+                cutoff_data_target = products_reordered[products_reordered[column_label] == i][target].quantile(0.70)
+                if cutoff_data_feature > cutoff_data_target :
+                    plt.scatter(products_reordered[(products_reordered[column_label] == i) & (products_reordered[feature_column] < cutoff_data_feature)][feature_column], \
+                                products_reordered[(products_reordered[column_label] == i) & (products_reordered[feature_column] < cutoff_data_feature)][target], s=20,label='Cluster ' + str(i + 1))
+                else:
+                    plt.scatter(products_reordered[(products_reordered[column_label] == i) & (
+                                products_reordered[target] < cutoff_data_target)][feature_column], \
+                                products_reordered[(products_reordered[column_label] == i) & (
+                                            products_reordered[target] < cutoff_data_target)][target], s=20,label='Cluster ' + str(i + 1))
+
+                plt.scatter(product_cluster_center[(product_cluster_center['Number_Cluster'] == selected_cluster) & (
+                        product_cluster_center['Cluster'] == i)][feature_column], \
+                            product_cluster_center[(product_cluster_center['Number_Cluster'] == selected_cluster) & (
+                                    product_cluster_center['Cluster'] == i)][target], s=300 \
+                            , c='black')
+            plt.xlabel(feature_column)
+            plt.ylabel(target)
+            plt.title('Cluster of ' + feature_product_seg + ' with ' + target)
+            plt.legend()
+            col2.pyplot()
 
 
-            x_data = ['Cluster 0', 'Cluster 1', 'Cluster 2', 'Cluster 3', 'Cluster 4', 'Cluster 5', 'Cluster 6', 'Cluster 7']
-            colors = ['rgba(93, 164, 214, 0.5)', 'rgba(255, 144, 14, 0.5)', 'rgba(44, 160, 101, 0.5)', 'rgba(255, 65, 54, 0.5)',
-                      'rgba(22, 80, 57, 0.5)', 'rgba(127, 65, 14, 0.5)', 'rgba(207, 114, 255, 0.5)', 'rgba(127, 96, 0, 0.5)']
+        ## Visualization between the features each other
+        for idx,val in enumerate(list_target):
+            cluster_visual(column_label, k, feature_product, val)
 
-            cutoff_quantile = 95
-            cl = 'clusters_' + str(n_clusters)
-            for fild in range(0, len(product_column)):
-                field_to_plot = product_column[fild]
-                y_data = list()
-                ymax = 0
-                for i in np.arange(0, n_clusters):
-                    y0 = products_reordered[products_reordered[cl] == i][field_to_plot].values
-                    y0 = y0[y0 < np.percentile(y0, cutoff_quantile)]
-                    # if ymax < max(y0): ymax = max(y0)
-                    y_data.insert(i, y0)
+        ## Box plot to show the different of the features in each cluster
+        n_clusters = k
 
-                traces = []
 
-                for xd, yd, cls in zip(x_data[:n_clusters], y_data, colors[:n_clusters]):
-                    traces.append(go.Box(y=yd, name=xd, boxpoints=False, jitter=0.5, whiskerwidth=0.2, fillcolor=cls,
-                                         marker=dict(size=1, ),
-                                         line=dict(width=1),
-                                         ))
+        x_data = ['Cluster 0', 'Cluster 1', 'Cluster 2', 'Cluster 3', 'Cluster 4', 'Cluster 5', 'Cluster 6', 'Cluster 7']
+        colors = ['rgba(93, 164, 214, 0.5)', 'rgba(255, 144, 14, 0.5)', 'rgba(44, 160, 101, 0.5)', 'rgba(255, 65, 54, 0.5)',
+                  'rgba(22, 80, 57, 0.5)', 'rgba(127, 65, 14, 0.5)', 'rgba(207, 114, 255, 0.5)', 'rgba(127, 96, 0, 0.5)']
 
-                layout = go.Layout(
-                    yaxis=dict(autorange=True, showgrid=True, zeroline=True,
-                               dtick=int(ymax / 10),
-                               gridcolor='black', gridwidth=0.1, zerolinecolor='rgb(255, 255, 255)', zerolinewidth=2, ),
-                    margin=dict(l=40, r=30, b=50, t=50, ),
-                    paper_bgcolor='white',
-                    plot_bgcolor='white',
-                    showlegend=False
-                )
+        cutoff_quantile = 95
+        cl = 'clusters_' + str(n_clusters)
+        for fild in range(0, len(product_column)):
+            field_to_plot = product_column[fild]
+            y_data = list()
+            ymax = 0
+            for i in np.arange(0, n_clusters):
+                y0 = products_reordered[products_reordered[cl] == i][field_to_plot].values
+                y0 = y0[y0 < np.percentile(y0, cutoff_quantile)]
+                # if ymax < max(y0): ymax = max(y0)
+                y_data.insert(i, y0)
 
-                fig = go.Figure(data=traces, layout=layout)
-                fig.update_layout(
-                    title= 'Difference in ' + field_to_plot + ' with ' + str(n_clusters) + ' Clusters.'
-                )
-                col3.plotly_chart(fig)
+            traces = []
+
+            for xd, yd, cls in zip(x_data[:n_clusters], y_data, colors[:n_clusters]):
+                traces.append(go.Box(y=yd, name=xd, boxpoints=False, jitter=0.5, whiskerwidth=0.2, fillcolor=cls,
+                                     marker=dict(size=1, ),
+                                     line=dict(width=1),
+                                     ))
+
+            layout = go.Layout(
+                yaxis=dict(autorange=True, showgrid=True, zeroline=True,
+                           dtick=int(ymax / 10),
+                           gridcolor='white', gridwidth=0.1, zerolinecolor='rgb(255, 255, 255)', zerolinewidth=2, ),
+                margin=dict(l=40, r=30, b=50, t=50, ),
+                paper_bgcolor='white',
+                plot_bgcolor='rgba(93, 164, 214, 0.5)',
+                showlegend=False
+            )
+
+            fig = go.Figure(data=traces, layout=layout)
+            fig.update_layout(
+                title= 'Difference in ' + field_to_plot + ' with ' + str(n_clusters) + ' Clusters.'
+            )
+            col3.plotly_chart(fig)
 
 
 
