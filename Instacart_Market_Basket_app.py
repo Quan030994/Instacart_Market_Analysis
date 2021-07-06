@@ -60,6 +60,9 @@ product_cluster_center = pd.read_csv('product_cluster_center.csv')
 col1 = st.sidebar
 col2, col3 = st.beta_columns((2,1))
 
+img2 = mpimg.imread('DataCracy.png')
+col1.image(img2, width = 280)
+
 col1.header('Analysis Activate')
 analysis_active = col1.selectbox('Select Analysis activate ', ('Overview Data',\
                                                                'Customer Segmentation', 'Product Segmentation'))
@@ -243,6 +246,30 @@ elif analysis_active == 'Customer Segmentation':
 
     col2.markdown("***")
 
+    col2.markdown('** Conclusion about the clusters: **')
+    col2.write("""
+
+        ** Cluster 0: **
+        - Segmentation of customers with high purchasing frequency and the low time intervals between purchases.
+        - Segmentation of customers with high and frequent shopping values. This is an important customer group for the company/business.
+
+        ** Cluster 1: **
+        -  Segmentation of customers with a low frequency of purchases and large time intervals between purchases.
+
+            """)
+    col2.markdown('** Recommendations about the clusters: **')
+    col2.write("""
+    - From the specific information of each customer segmentation and based on the company's development strategy, some recommendations are made:
+
+        ** 1. ** To be more effective needed to combining with other factors such as customer information, products, etc...
+
+        ** 2. ** With segmentation of customers with high and frequent shopping value needed to care, after-sales, promotions, and gratitude program for loyal customers.
+
+        ** 3. ** With segmentation of customers has low shopping value and infrequently needed to find out the reason of this issue. Maybe they are promotion hunters and do not buy fixed products in one place...
+
+            """)
+    col2.markdown('***')
+
     st.set_option('deprecation.showPyplotGlobalUse', False)
     ## Pie chart show information of each Cluster
     cmap = plt.get_cmap('Spectral')
@@ -324,7 +351,10 @@ elif analysis_active == 'Customer Segmentation':
     fig = go.Figure(fig)
     col2.plotly_chart(fig, filename='transparent-background')
 
-    if col1.checkbox("Detail Cluster"):
+    if col1.checkbox("Clustering Detail"):
+
+        col2.markdown('** The detailed information of each Cluster **')
+        col2.markdown('***')
         def cluster_visual(column_label,k, feature_column, target):
 
             sns.set(style='darkgrid', font_scale=1.0, rc={"figure.figsize": [14, 6]})
@@ -350,7 +380,10 @@ elif analysis_active == 'Customer Segmentation':
         for idx,val in enumerate(list_target):
             cluster_visual(column_label, k, feature_column, val)
 
+    if col1.checkbox("Features after clustering"):
 
+        col2.markdown('** The information of Features after Clustering **')
+        col2.markdown('***')
         ## Box plot to show the different of the features in each cluster
         n_clusters = k
 
@@ -393,7 +426,7 @@ elif analysis_active == 'Customer Segmentation':
             fig.update_layout(
                 title= 'Difference in ' + field_to_plot + ' with ' + str(n_clusters) + ' Clusters.'
             )
-            col3.plotly_chart(fig)
+            col2.plotly_chart(fig)
 
 elif analysis_active == 'Product Segmentation':
 
@@ -500,6 +533,34 @@ elif analysis_active == 'Product Segmentation':
     col2.dataframe(product_cluster_center[product_cluster_center['Number_Cluster'] == selected_cluster].iloc[:, :6])
     col2.markdown("***")
 
+    col2.markdown('** Conclusion about the clusters: **')
+    col2.write("""
+
+        ** Cluster 2: **
+        - A product segmentation that only accounts for nearly ** 11% ** of the number of products, but accounts for ** 94% ** 
+        of the total number of product lines in the order.
+
+        ** Cluster 0: **
+        -  Is the product segmentation that accounts for ** 44% ** of the product volume, but only ** 5% ** of the total number of lines in the orders.
+
+        ** Cluster 1 **, ** 3 **, and ** 4 :** 
+
+        - Accounting for about ** 45% ** but only accounting for nearly ** 1% ** 
+        of the total number of lines in the orders.
+
+                    """)
+    col2.markdown('** Recommendations about the clusters: **')
+    col2.write("""
+    - From the specific information of each product segmentation and based on the company's development strategy, some recommendations are made:
+
+        ** 1.  ** With ** Cluster 2 ** what needs to be done is to maintain the quality of the inputs and change the models to match the market needs, 
+        new marketing methods to attract and retain customers in this product group.
+
+        ** 2. ** With the remaining segments, it is necessary to consider eliminating products that are not really 
+        effective to invest in product segments that bring higher profits.
+                    """)
+    col2.markdown('***')
+
     st.set_option('deprecation.showPyplotGlobalUse', False)
     ## Pie chart show information of each Cluster
     cmap = plt.get_cmap('Spectral')
@@ -587,7 +648,10 @@ elif analysis_active == 'Product Segmentation':
     col2.plotly_chart(fig, filename='transparent-background')
 
 
-    if col1.checkbox("Detail Cluster"):
+    if col1.checkbox("Clustering Detail"):
+
+        col2.markdown('** The detailed information of each Cluster **')
+        col2.markdown('***')
 
         def cluster_visual(column_label,k, feature_column, target):
 
@@ -620,6 +684,11 @@ elif analysis_active == 'Product Segmentation':
         ## Visualization between the features each other
         for idx,val in enumerate(list_target):
             cluster_visual(column_label, k, feature_product, val)
+
+    if col1.checkbox("Features after clustering"):
+
+        col2.markdown('** The information of Features after Clustering **')
+        col2.markdown('***')
 
         ## Box plot to show the different of the features in each cluster
         n_clusters = k
@@ -663,7 +732,7 @@ elif analysis_active == 'Product Segmentation':
             fig.update_layout(
                 title= 'Difference in ' + field_to_plot + ' with ' + str(n_clusters) + ' Clusters.'
             )
-            col3.plotly_chart(fig)
+            col2.plotly_chart(fig)
 
 
 
