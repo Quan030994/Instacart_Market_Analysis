@@ -14,6 +14,7 @@ import seaborn as sns
 import matplotlib.image as mpimg
 import matplotlib.cm as cm
 import matplotlib as mpl
+import pickle
 import warnings
 warnings.filterwarnings("ignore")
 
