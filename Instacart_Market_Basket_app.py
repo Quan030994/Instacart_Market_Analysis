@@ -55,6 +55,9 @@ cus_orderdetail_df = pd.read_csv('cus_orderdetail_df.csv')
 cluster_centers = pd.read_csv('cluster_center.csv')
 products_reordered = pd.read_csv('products_reordered.csv')
 product_cluster_center = pd.read_csv('product_cluster_center.csv')
+product_df = pd.read_csv('products.csv')
+department_df = pd.read_csv('departments.csv')
+aisle = pd.read_csv('aisles.csv')
 # Page layout (continued)
 ## Divide page to 3 columns (col1 = sidebar, col2 and col3 = page contents)
 col1 = st.sidebar
@@ -64,8 +67,8 @@ img2 = mpimg.imread('DataCracy.png')
 col1.image(img2, width = 280)
 
 col1.header('Analysis Activate')
-analysis_active = col1.selectbox('Select Analysis activate ', ('Overview Data',\
-                                                               'Customer Segmentation', 'Product Segmentation'))
+analysis_active = col1.selectbox('Select Analysis activate ', ('Overview Data','Customer Segmentation',\
+                                                               'Product Segmentation','Predict Purchase Again'))
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
@@ -113,7 +116,6 @@ if analysis_active == 'Overview Data':
 
     elif dataset == 'Product':
 
-        product_df = pd.read_csv('products.csv')
         col2.subheader('Information of The Product Dataset')
 
         col2.write("""
@@ -130,7 +132,7 @@ if analysis_active == 'Overview Data':
 
     elif dataset == 'Department':
 
-        department_df = pd.read_csv('departments.csv')
+
         col2.subheader('Information of The Department Dataset')
 
         col2.write("""
@@ -143,7 +145,6 @@ if analysis_active == 'Overview Data':
         st.dataframe(department_df)
 
     else:
-        aisle = pd.read_csv('aisles.csv')
         col2.subheader('Information of The Aisle Dataset')
 
         col2.write("""
@@ -733,6 +734,176 @@ elif analysis_active == 'Product Segmentation':
                 title= 'Difference in ' + field_to_plot + ' with ' + str(n_clusters) + ' Clusters.'
             )
             col2.plotly_chart(fig)
+
+elif analysis_active == 'Predict Purchase Again':
+    col2.subheader('The Diagram of Prediction Model')
+    img3 = mpimg.imread('model.png')
+    col2.image(img3, width=1000)
+    col2.markdown('***')
+
+    # Collects user input features into dataframe
+    uploaded_file = st.sidebar.file_uploader("Upload your input CSV file", type=["csv"])
+    if uploaded_file is not None:
+        col2.subheader('The Data detail uploaded')
+        sample_df = pd.read_csv(uploaded_file)
+        col2.write(sample_df)
+        col2.markdown('***')
+    else:
+        col2.subheader('Awaiting CSV file to be uploaded. Currently using example input parameters (shown below).')
+        sample_df = pd.read_csv('sample_df.csv')
+        col2.write(sample_df)
+        col2.markdown('***')
+
+    ### Single User
+
+    # Number of orders per customer
+    user_order = sample_df.groupby(['user_id'])['order_id'].unique().reset_index()
+    user_order['u_total_orders'] = user_order['order_id'].apply(lambda x: len(x))
+    user_order = user_order.drop('order_id', axis=1)
+
+    # Mean of Re-ordered by user
+    user_re = sample_df.groupby(['user_id'])['reordered'].mean().to_frame('u_reordered_ratio').reset_index()
+
+    ### Single Product
+
+    # Number of orders per product
+    product_order = sample_df.groupby('product_id')['order_id'].count().to_frame('p_total_purchases').reset_index()
+
+    # Mean of Re-ordered by product
+    product_re = sample_df.groupby('product_id')['reordered'].mean().to_frame('p_reorder_ratio').reset_index()
+
+    ## Addtocart
+
+    Addtocart = sample_df.groupby('product_id')['add_to_cart_order'].mean().to_frame('position_to_cart').reset_index()
+
+    ## Merge datafarme
+
+    user = pd.merge(user_order, user_re, how='left', on='user_id')
+    product = pd.merge(product_order, product_re, how='left', on='product_id')
+    product = pd.merge(product, Addtocart, how='left', on='product_id')
+
+    ### User and Product
+
+    ## 1. How many times a user bought a product
+    up = sample_df.groupby(['user_id', 'product_id'])['order_id'].count().to_frame('up_total_bought').reset_index()
+
+    ## 2.How frequently a customer bought a product after its first purchase
+
+    times = sample_df.groupby(['user_id', 'product_id'])[['order_id']].count()
+    times.columns = ['times_bought']
+
+    # Calculate total orders by group by user_id then specify the max number of order number
+    total_orders = sample_df.groupby('user_id')['order_number'].max().to_frame('total_orders')
+
+    # Calculate first order number by group by user_id, product_id then specify the min number of order number
+    first_order_no = sample_df.groupby(['user_id', 'product_id'])['order_number'].min().to_frame(
+        'first_order_number').reset_index()
+
+    # Merge total_order with first_order_number with right join to keep product_id
+    order_since_first = pd.merge(total_orders, first_order_no, on='user_id', how='right')
+
+    # Calculate the total order placed since the first user's order of a product: order_range (of course including the first order of a product)
+    order_since_first['order_range'] = order_since_first.total_orders - order_since_first.first_order_number + 1
+
+    # Merge times_bought with order_range
+    up_ratio = pd.merge(times, order_since_first, on=['user_id', 'product_id'], how='left')
+
+    # Calculate the ratio, name it up_reorder_ratio
+    up_ratio['up_reorder_ratio'] = up_ratio.times_bought / up_ratio.order_range
+
+    up_ratio = up_ratio.drop(['times_bought', 'total_orders', 'first_order_number', 'order_range'], axis=1)
+
+    del [times, first_order_no, order_since_first]
+
+    # Merge second predictor with the first one before move to the final feature
+    up = up.merge(up_ratio, on=['user_id', 'product_id'], how='left')
+
+    del up_ratio
+
+    # 3.How many times a customer bought a product on its last 5 orders
+
+    # With .transform(max) we request to get the highest number of the column order_number for each group user_id
+    sample_df['order_number_reverse'] = sample_df.groupby('user_id')['order_number'].transform(
+        max) - sample_df.order_number + 1
+
+    last_5_orders = sample_df[sample_df.order_number_reverse <= 5]
+
+    last_five = last_5_orders.groupby(['user_id', 'product_id'])[['order_id']].count()
+    last_five.columns = ['times_last_5']
+
+    # Merge the final features with the first two predictor features
+    up = up.merge(last_five, on=['user_id', 'product_id'], how='left')
+
+    del last_five
+
+    # fill NaN values
+    up = up.fillna(0)
+
+    ## Merge All features
+
+    # Merge up features with the user features
+    data = up.merge(user, on='user_id', how='left')
+
+    # Merge up features with the product features
+    data = data.merge(product, on='product_id', how='left')
+
+    col2.subheader('Data after completed features engineering ')
+    col2.write("""
+        - u_total_orders: the total number of orders the customer (A) has purchased.
+        - u_reordered_ratio: customer's repurchase rate of previous products (A).
+        - p_total_purchases: the total number of orders purchased for the product (B).
+        - p_reorder_ratio: product repurchase rate (B).
+        - p_position_to_cart: order of products added to cart (B).
+        - up_total_bought: the number of products (B) that customer (A) purchased.
+        - up_reorder_ratio: rate of purchase (B) by customer (A) since the first purchase (B).
+        - time_last_5: the number of products (B) that customer (A) has purchased in the last 5 orders.
+
+    """)
+    col2.write(data)
+    col2.markdown('***')
+
+    data_df = data.set_index(['user_id', 'product_id'])
+
+    ## Pre-Processing
+
+    # 1. Read datafarme Paremeters to scale Std
+
+    para_df = pd.read_csv('para_scale.csv')
+    para_df['std'] = para_df['var'].apply(lambda x: np.sqrt(x))
+
+
+    def Standard_scale(x, mean, std):
+        z = (x - mean) / std
+        return z
+
+
+    for i in range(len(data_df.columns)):
+        mean = para_df.iloc[i, 0]
+        std = para_df.iloc[i, 2]
+        data_df[data_df.columns[i]] = data_df[data_df.columns[i]].apply(lambda x: Standard_scale(x, mean, std))
+
+    # Load Model
+    xgb = pickle.load(open('xgb_cmodel.pkl', 'rb'))
+
+    # Apply model to make predictions
+    prediction = (xgb.predict_proba(data_df)[:, 1] >= 0.21).astype(int)
+    prediction_proba = xgb.predict_proba(data_df)
+
+    data['prediction'] = prediction
+    final_df = data[['product_id', 'user_id', 'prediction']]
+    final_df = pd.merge(final_df, product_df[['product_id', 'product_name']], how='left', on='product_id')
+
+    col2.subheader('Prediction')
+    col2.write(final_df)
+    col2.markdown('***')
+
+    col2.subheader('Prediction Probability')
+    probability_df = pd.DataFrame(prediction_proba, columns=[0, 1])
+    data = pd.concat([data, probability_df], axis=1)
+    final_probability_df = data[['product_id', 'user_id', 0, 1]]
+    final_probability_df = pd.merge(final_probability_df, product_df[['product_id', 'product_name']], how='left',
+                                    on='product_id')
+    col2.dataframe(final_probability_df)
 
 
 
