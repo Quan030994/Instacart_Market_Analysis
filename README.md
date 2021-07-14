@@ -15,7 +15,9 @@
 - Customer segmentation is the process of finding differences between customers' behaviors, attributes, and characteristics, and then grouping them based on those characteristics.
 
 The benefits of good customer segmentation:
+
 **1. Increase the effectiveness of marketing strategies.**
+
 **2. Optimize the customer journey.**
 **3. Predict customer behavior.**
 **4. Personalize the customer experience.**
