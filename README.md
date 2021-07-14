@@ -1,6 +1,6 @@
 # Instacart_Market_Analysis 
 ## Let's see some deep understand of both concepts:
-1. **Customer segmentation: ** 
+1. **Customer segmentation:** 
     - The problem of uncovering information about a firm's customer base, based on their interactions with the business. 
     - In most cases this interaction is in terms of their purchase behavior and patterns. 
     - We explore some of the ways in which this can be used..
