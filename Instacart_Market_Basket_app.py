@@ -28,6 +28,13 @@ st.set_page_config(layout="wide")
 img1 = mpimg.imread('instacart-vector-logo.png')
 st.image(img1, width = 500)
 
+chart_config = {
+    'toImageButtonOptions': {
+        'filename': 'transparent-background',
+        # 'format': 'png'
+    }
+}
+
 st.write("""
    # Instacart Market Analysis
    
@@ -256,7 +263,7 @@ elif analysis_active == 'Customer Segmentation':
     # fig = go.Figure(data= data, layout=layout)
     fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
     fig = go.Figure(fig)
-    col2.plotly_chart(fig, filename='transparent-background')
+    col2.plotly_chart(fig, config = chart_config)
 ##################################################################################################
 
 
@@ -284,7 +291,7 @@ elif analysis_active == 'Customer Segmentation':
     # fig = go.Figure(data= data, layout=layout)
     fig.update_traces( hole=.4, hoverinfo="label+percent+name+value")
     fig = go.Figure(fig)
-    col2.plotly_chart(fig, filename='transparent-background')
+    col2.plotly_chart(fig, config = chart_config)
 
     ##############################################################################
 
@@ -312,7 +319,7 @@ elif analysis_active == 'Customer Segmentation':
     # fig = go.Figure(data= data, layout=layout)
     fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
     fig = go.Figure(fig)
-    col2.plotly_chart(fig, filename='transparent-background')
+    col2.plotly_chart(fig, config = chart_config)
 
     if col1.checkbox("Clustering Detail"):
 
@@ -495,7 +502,7 @@ elif analysis_active == 'Product Segmentation':
     # fig = go.Figure(data= data, layout=layout)
     fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
     fig = go.Figure(fig)
-    col2.plotly_chart(fig, filename='transparent-background')
+    col2.plotly_chart(fig, config = chart_config)
 ##################################################################################################
 
 
@@ -523,7 +530,7 @@ elif analysis_active == 'Product Segmentation':
     # fig = go.Figure(data= data, layout=layout)
     fig.update_traces( hole=.4, hoverinfo="label+percent+name+value")
     fig = go.Figure(fig)
-    col2.plotly_chart(fig, filename='transparent-background')
+    col2.plotly_chart(fig, config = chart_config)
 
     ##############################################################################
 
@@ -551,7 +558,7 @@ elif analysis_active == 'Product Segmentation':
     # fig = go.Figure(data= data, layout=layout)
     fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
     fig = go.Figure(fig)
-    col2.plotly_chart(fig, filename='transparent-background')
+    col2.plotly_chart(fig, config = chart_config)
 
 
     if col1.checkbox("Clustering Detail"):
