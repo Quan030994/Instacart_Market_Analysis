@@ -59,7 +59,6 @@ st.markdown("""
 """)
 
 ## Get data
-@st.cache_data
 cus_orderdetail_df = pd.read_csv('cus_orderdetail_df.csv')
 cluster_centers = pd.read_csv('cluster_center.csv')
 products_reordered = pd.read_csv('products_reordered.csv')
