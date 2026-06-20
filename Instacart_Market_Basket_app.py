@@ -187,43 +187,6 @@ elif analysis_active == 'Customer Segmentation':
 
     st.markdown("***")
 
-    # if segment_active == 'Overview':
-    #
-    #     idx = feature_selected.index(feature_cus_seg)
-    #     measure = feature[idx]
-    #
-    #     st.set_option('deprecation.showPyplotGlobalUse', False)
-    #     def Overview (feature_cus_seg, measure):
-    #
-    #         sns.set(style='darkgrid', font_scale=1.0, rc={"figure.figsize": [14, 6]})
-    #
-    #         f, ax = plt.subplots(1, 2, figsize=(20, 7))
-    #
-    #         # Get the fitted parameters used by the function
-    #         (mu, sigma) = norm.fit(cus_orderdetail_df[measure])
-    #
-    #         sns.set(style='darkgrid', font_scale=1.0)
-    #
-    #         # Kernel Density plot
-    #         sns.distplot(cus_orderdetail_df[measure], fit=norm, ax=ax[0])
-    #         ax[0].set_title(feature_cus_seg + ' Distribution ( mu = {:.2f} and sigma = {:.2f} )'.format(mu, sigma), loc='center')
-    #         ax[0].set_xlabel(feature_cus_seg)
-    #         ax[0].set_ylabel('Frequency')
-    #
-    #         # QQ plot
-    #         res = probplot(cus_orderdetail_df[measure], plot=ax[1])
-    #         ax[1].set_title(
-    #             measure + ' Probability Plot (skewness: {:.6f} and kurtosis: {:.6f} )'.format(cus_orderdetail_df[measure].skew(),
-    #                                                                                           cus_orderdetail_df[measure].kurt()),
-    #             loc='center')
-    #
-    #         st.pyplot()
-    #
-    #     ## Run function when been gotten the parameters out
-    #     Overview(feature_cus_seg, measure)
-    #
-    # else:
-
     ## Sidebar - Cluster selections
     selected_cluster = col1.selectbox('Select information type', ('Clusters_2', 'Clusters_5','Clusters_8'))
 
@@ -271,7 +234,6 @@ elif analysis_active == 'Customer Segmentation':
             """)
     col2.markdown('***')
 
-    st.set_option('deprecation.showPyplotGlobalUse', False)
     ## Pie chart show information of each Cluster
     cmap = plt.get_cmap('Spectral')
     colors = [cmap(i) for i in np.linspace(0, 1, 8)]
@@ -455,62 +417,6 @@ elif analysis_active == 'Product Segmentation':
     col2.dataframe(products_reordered.iloc[:5, [0,1,2,3,4,5,10,11]])
     col2.markdown("***")
 
-    # if segment_active_product == 'Overview':
-    #     feature_product = str(feature_product_seg).lower()
-    #     if (feature_product_seg == 'Department') | (feature_product_seg == 'Aisle'):
-    #
-    #         def make_count(df, col):
-    #             fig, ax = plt.subplots(1, 1, figsize=(14, 7))
-    #             g = sns.countplot(x=col, order = df[col].value_counts().head(21).index,data=df)
-    #             g.set_ylabel("Number")
-    #             g.set_title('Distributed of ' + col)
-    #             for label in ax.get_xticklabels():
-    #                 label.set_rotation(90)
-    #             plot_dict = {}
-    #             val_counts = dict(df[col].value_counts().head(21).sort_index())
-    #             for k, v in val_counts.items():
-    #                 if k in val_counts:
-    #                     plot_dict[val_counts[k]] = val_counts[k]
-    #                 else:
-    #                     plot_dict[0] = 0
-    #             for x in g.patches:
-    #                 height = x.get_height()
-    #                 g.text(x.get_x() + x.get_width() / 2.0, height, plot_dict[height] \
-    #                        , ha="center", va="bottom", fontsize=8, weight="semibold", size="small")
-    #             col2.pyplot()
-    #         make_count(products_reordered, feature_product)
-    #     else:
-    #
-    #         def Overview(feature_cus_seg, measure):
-    #
-    #             sns.set(style='darkgrid', font_scale=1.0, rc={"figure.figsize": [14, 6]})
-    #
-    #             f, ax = plt.subplots(1, 2, figsize=(20, 7))
-    #
-    #             # Get the fitted parameters used by the function
-    #             (mu, sigma) = norm.fit(products_reordered[measure])
-    #
-    #             sns.set(style='darkgrid', font_scale=1.0)
-    #
-    #             # Kernel Density plot
-    #             sns.distplot(products_reordered[measure], fit=norm, ax=ax[0])
-    #             ax[0].set_title(feature_cus_seg + ' Distribution ( mu = {:.2f} and sigma = {:.2f} )'.format(mu, sigma),
-    #                             loc='center')
-    #             ax[0].set_xlabel(feature_cus_seg)
-    #             ax[0].set_ylabel('Frequency')
-    #
-    #             # QQ plot
-    #             res = probplot(products_reordered[measure], plot=ax[1])
-    #             ax[1].set_title(
-    #                 measure + ' Probability Plot (skewness: {:.6f} and kurtosis: {:.6f} )'.format(
-    #                     products_reordered[measure].skew(),
-    #                     products_reordered[measure].kurt()),
-    #                 loc='center')
-    #
-    #             st.pyplot()
-    #
-    #         Overview(feature_product_seg, feature_product)
-    # else:
 
     product_column = ['frequency', 'reordered_0', 'reordered_1', 'ordered_first', 'ordered_last']
     feature_product = str(feature_product_seg).lower()
@@ -562,7 +468,6 @@ elif analysis_active == 'Product Segmentation':
                     """)
     col2.markdown('***')
 
-    st.set_option('deprecation.showPyplotGlobalUse', False)
     ## Pie chart show information of each Cluster
     cmap = plt.get_cmap('Spectral')
     colors = [cmap(i) for i in np.linspace(0, 1, 8)]
