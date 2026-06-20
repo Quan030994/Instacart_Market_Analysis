@@ -71,7 +71,6 @@ col1.header('Analysis Activate')
 analysis_active = col1.selectbox('Select Analysis activate ', ('Overview Data','Customer Segmentation',\
                                                                'Product Segmentation','Predict Purchase Again'))
 
-st.set_option('deprecation.showPyplotGlobalUse', False)
 
 if analysis_active == 'Overview Data':
     col1.header('Dataset')
